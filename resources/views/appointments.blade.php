@@ -645,7 +645,7 @@ window.onclick = function(event) {
             </div>
         </div>
     </div>
-
+<br>
     @section('css')
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css" rel="stylesheet">
         <style>
