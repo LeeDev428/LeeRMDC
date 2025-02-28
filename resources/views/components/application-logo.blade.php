@@ -1,0 +1,1 @@
+<img src="{{ asset('img/dcms_iconmini(1).png')}}" width=55px; style="position: absolute; top: 5px; left:20px">
