@@ -136,14 +136,22 @@
         
         // Add the store route for adding new procedure prices
         Route::post('/admin/procedure-prices', [ProcedurePriceController::class, 'store'])->name('admin.procedure_prices.store');
-    });
+      
+        Route::delete('/admin/procedure_prices/{id}', [ProcedurePriceController::class, 'destroy'])->name('admin.procedure_prices.destroy');
 
+        Route::get('admin/declined-appointments', [AdminAppointment::class, 'declinedAppointments'])->name('admin.declined_appointments');
+
+
+Route::delete('admin/appointments/delete-all-declined', [AdminAppointment::class, 'deleteAllDeclined'])
+    ->name('appointments.deleteAllDeclined');
+
+    Route::post('admin/appointment/{id}/{action}', [AdminAppointment::class, 'messageFromAdmin'])->name('appointment.messageFromAdmin');
+
+    });
+    
+    Route::get('/get-procedure-details', [ProcedurePriceController::class, 'getProcedureDetails'])->name('getProcedureDetails');
     // Define a new route to fetch the procedure price based on the procedure name
 Route::get('/get-procedure-price', [AppointmentController::class, 'getProcedurePrice'])->name('getProcedurePrice');
-
-
-
-
 
 
     

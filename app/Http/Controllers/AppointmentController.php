@@ -81,89 +81,100 @@ class AppointmentController extends Controller
 }
     
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string',
-            'procedure' => 'required|string',
-            'time' => 'required|string',
-            'start' => 'required|date',
-            'image_path' => 'required|image|mimes:jpeg,png,jpg,svg|max:2048',
-        ]);
-    
-        $procedureTimes = [
-            'Pasta' => 30,
-            'Root Canal' => 90,
-            'Teeth Whitening' => 60,
-            'Fillings' => 45,
-            'Extraction' => 60,
-            'Cleaning' => 45,
-            'Checkup' => 30
-        ];
-    
-        $user_id = Auth::id();
-        $startTime = Carbon::parse($validated['start']);
-        $today = Carbon::today();
-        $startOfWeek = $today->copy()->startOfWeek();
-        $endOfWeek = $today->copy()->endOfWeek();
-    
-        // ❌ Prevent booking past days within the same week
-        if ($startTime < $today || $startTime > $endOfWeek) {
-            return response()->json(['error' => 'You can only book from today until Sunday!'], 422);
-        }
-    
-        // Calculate end time
-        $duration = $procedureTimes[$validated['procedure']] ?? 30;
-        $endTime = $startTime->copy()->addMinutes($duration);
-    
-        // 🔥 FIX: Allow booking exactly at the end time
-        $conflictingAppointments = Appointment::whereDate('start', $startTime->toDateString())
-            ->where(function ($query) use ($startTime, $endTime) {
-                $query->whereBetween('start', [$startTime, $endTime->copy()->subMinute()])
-                      ->orWhere(function ($query) use ($startTime, $endTime) {
-                          $query->where('start', '<', $startTime)
-                                ->where('end', '>', $startTime);
-                      });
-            })
-            ->exists();
-    
-        if ($conflictingAppointments) {
-            return response()->json(['error' => 'Selected time slot is already booked!'], 422);
-        }
-    
-        // Store image
-        $image_path = null;
-        if ($request->hasFile('image_path')) {
-            $image = $request->file('image_path');
-            $filename = time() . '_' . $image->getClientOriginalName();
-            $path = $image->storeAs('valid_ids', $filename, 'public');
-            $image_path = $path;
-        }
-    
-        // Create appointment
-        $appointment = Appointment::create([
-            'title' => $validated['title'],
-            'procedure' => $validated['procedure'],
-            'time' => $validated['time'],
-            'start' => $startTime,
-            'end' => $endTime,
-            'duration' => $duration,
-            'user_id' => $user_id,
-            'image_path' => $image_path,
-        ]);
-    
-        return response()->json([
-            'id' => $appointment->id,
-            'title' => $appointment->title,
-            'start' => $appointment->start,
-            'end' => $appointment->end,
-            'procedure' => $appointment->procedure,
-            'duration' => $appointment->duration,
-            'user_id' => $appointment->user_id,
-            'image_path' => $appointment->image_path ? Storage::url($appointment->image_path) : null,
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string',
+        'procedure' => 'required|string',
+        'time' => 'required|string',
+        'start' => 'required|date',
+        'image_path' => 'required|image|mimes:jpeg,png,jpg,svg|max:2048',
+    ]);
+
+    $user_id = Auth::id();
+    $startTime = Carbon::parse($validated['start']);
+    $today = Carbon::today();
+$now = Carbon::now();
+$startOfWeek = $today->copy()->startOfWeek(); // Monday
+$endOfWeek = $today->copy()->endOfWeek(); // Sunday
+
+if ($today->isSunday()) {
+    // If today is Sunday, allow only Monday
+    $allowedStart = $today->copy()->addDay(); // Monday
+    $allowedEnd = $allowedStart; // Only Monday
+} else {
+    // If today is Monday-Saturday, allow booking from tomorrow to Sunday
+    $allowedStart = $today->copy()->addDay(); // Tomorrow
+    $allowedEnd = $endOfWeek; // Sunday
+}
+
+// Ensure the selected start time is within the allowed range
+if ($startTime < $allowedStart || $startTime > $allowedEnd) {
+    return response()->json(['error' => 'Invalid booking date. Please follow the allowed schedule.'], 422);
+}
+
+// ✅ New Rule: Ensure booking is at least 4 hours ahead of the present time
+$minimumBookingTime = $now->copy()->addHours(4);
+if ($startTime < $minimumBookingTime) {
+    return response()->json(['error' => 'Appointments must be scheduled at least 4 hours in advance.'], 422);
+}
+
+ // ✅ Fetch procedure duration from `procedure_prices` table
+$procedure = ProcedurePrice::where('procedure_name', $validated['procedure'])->first();
+$duration = $procedure ? (int) $procedure->duration : 30; // Convert to integer
+
+// Calculate end time
+$endTime = $startTime->copy()->addMinutes($duration);
+
+
+    // 🔥 FIX: Allow booking exactly at the end time
+    $conflictingAppointments = Appointment::whereDate('start', $startTime->toDateString())
+        ->where(function ($query) use ($startTime, $endTime) {
+            $query->whereBetween('start', [$startTime, $endTime->copy()->subMinute()])
+                  ->orWhere(function ($query) use ($startTime, $endTime) {
+                      $query->where('start', '<', $startTime)
+                            ->where('end', '>', $startTime);
+                  });
+        })
+        ->exists();
+
+    if ($conflictingAppointments) {
+        return response()->json(['error' => 'Selected time slot is already booked!'], 422);
     }
-    
+
+    // Store image
+    $image_path = null;
+    if ($request->hasFile('image_path')) {
+        $image = $request->file('image_path');
+        $filename = time() . '_' . $image->getClientOriginalName();
+        $path = $image->storeAs('valid_ids', $filename, 'public');
+        $image_path = $path;
+    }
+
+    // Create appointment
+    $appointment = Appointment::create([
+        'title' => $validated['title'],
+        'procedure' => $validated['procedure'],
+        'time' => $validated['time'],
+        'start' => $startTime,
+        'end' => $endTime,
+        'duration' => $duration,
+        'user_id' => $user_id,
+        'image_path' => $image_path,
+    ]);
+
+    return response()->json([
+        'id' => $appointment->id,
+        'title' => $appointment->title,
+        'start' => $appointment->start,
+        'end' => $appointment->end,
+        'procedure' => $appointment->procedure,
+        'duration' => $appointment->duration,
+        'user_id' => $appointment->user_id,
+        'image_path' => $appointment->image_path ? Storage::url($appointment->image_path) : null,
+    ]);
+}
+
     
 
     public function update(Request $request, $id)

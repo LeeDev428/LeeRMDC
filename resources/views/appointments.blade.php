@@ -424,12 +424,16 @@ window.onclick = function(event) {
     </select>
 </div>
                                 
-                                <!-- Estimated Time Display -->
-                                <div class="mb-4">
-                                    <label for="estimated-time" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Duration</label>
-                                    <input type="text" id="estimated-time" name="estimated-time" readonly class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Select a procedure">
-                                </div>
+                              
             
+<!-- Estimated Time Display -->
+<div class="mb-4">
+    <label for="estimated-time" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Duration</label>
+    <input type="text" id="estimated-time" name="estimated-time" readonly 
+           class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+           placeholder="Select a procedure"
+           value="{{ isset($procedurePrice) ? $procedurePrice->duration . ' minutes' : '' }}">
+</div>
 
 <!-- Procedure Price Display -->
 <div class="mb-4">
@@ -444,35 +448,39 @@ window.onclick = function(event) {
 
 <script>
     $(document).ready(function() {
-        // When the procedure is changed, trigger AJAX to get the price
         $('#operation-type').change(function() {
             var selectedProcedure = $(this).val(); // Get selected procedure
 
             if (selectedProcedure) {
-                // AJAX request to get the price
                 $.ajax({
-                    url: '{{ route('getProcedurePrice') }}',  // Your AJAX route
+                    url: '{{ route('getProcedureDetails') }}',  // Your AJAX route to fetch price & duration
                     type: 'GET',
                     data: { procedure: selectedProcedure },
                     success: function(response) {
-                        if (response && response.price) {
-                            // Update the price field with the fetched price
-                            $('#procedure-price').val('₱' + parseFloat(response.price).toFixed(2));
+                        if (response) {
+                            // Update price field
+                            $('#procedure-price').val(response.price ? '₱' + parseFloat(response.price).toFixed(2) : 'Price not available');
+                            
+                            // Update estimated duration field
+                            $('#estimated-time').val(response.duration ? response.duration + ' minutes' : 'Duration not available');
                         } else {
                             $('#procedure-price').val('Price not available');
+                            $('#estimated-time').val('Duration not available');
                         }
                     },
                     error: function() {
                         $('#procedure-price').val('Error fetching price');
+                        $('#estimated-time').val('Error fetching duration');
                     }
                 });
             } else {
-                // If no procedure is selected, reset the price field
                 $('#procedure-price').val('Price');
+                $('#estimated-time').val('Select a procedure');
             }
         });
     });
 </script>
+
 
 
                              <!-- Time Selection -->
@@ -711,13 +719,7 @@ window.onclick = function(event) {
          document.addEventListener('DOMContentLoaded', function() {
     // Define estimated times for each procedure
     const procedureTimes = {
-        'Pasta': '30 minutes', 
-        'Root Canal': '90 minutes',
-        'Teeth Whitening': '60 minutes',
-        'Fillings': '45 minutes',
-        'Extraction': '60 minutes',
-        'Cleaning': '45 minutes',
-        'Checkup': '30 minutes'
+     
     };
 
     var calendarEl = document.getElementById('calendar');
@@ -733,30 +735,52 @@ window.onclick = function(event) {
         },
 
         dateClick: function(info) {
-            const selectedDate = new Date(info.dateStr);
-            const now = new Date();
-            
-            // Get the start (Monday) and end (Sunday) of the current week
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
-            startOfWeek.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(info.dateStr);
+    const now = new Date();
 
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
-            endOfWeek.setHours(23, 59, 59, 999);
+    const isSunday = now.getDay() === 0; // Sunday = 0
+    const isMonday = now.getDay() === 1; // Monday = 1
 
-            // Validate if the selected date is within the current week
-            if (selectedDate < startOfWeek || selectedDate > endOfWeek) {
-                showErrorMessage("You can only book an appointment within this week (Monday to Sunday).");
-                return;
-            }
+    let allowedStart, allowedEnd;
 
-            $('#booking-start').val(info.dateStr);
-            $('#booking-end').val(info.dateStr);
-            $('#booking-modal').removeClass('hidden');
-            $('#booking-id').val('');
-            $('#delete-appointment').addClass('hidden');
-        },
+    if (isSunday) {
+        // If today is Sunday, allow only Monday
+        allowedStart = new Date(now);
+        allowedStart.setDate(now.getDate() + 1); // Monday
+        allowedStart.setHours(0, 0, 0, 0);
+        allowedEnd = new Date(allowedStart); // Only Monday
+    } else {
+        // If today is Monday-Saturday, allow booking from tomorrow to Sunday
+        allowedStart = new Date(now);
+        allowedStart.setDate(now.getDate() + 1); // Tomorrow
+        allowedStart.setHours(0, 0, 0, 0);
+        
+        allowedEnd = new Date(now);
+        allowedEnd.setDate(now.getDate() - now.getDay() + 7); // Sunday
+        allowedEnd.setHours(23, 59, 59, 999);
+    }
+
+    // ✅ New Rule: Ensure booking is at least 4 hours ahead
+    const minAllowedTime = new Date(now);
+    minAllowedTime.setHours(now.getHours() + 4); // 4 hours from now
+
+    if (selectedDate < allowedStart || selectedDate > allowedEnd) {
+        showErrorMessage("Invalid booking date. Please follow the allowed schedule.");
+        return;
+    }
+
+    if (selectedDate.getTime() < minAllowedTime.getTime()) {
+        showErrorMessage("Appointments must be scheduled at least 4 hours in advance.");
+        return;
+    }
+
+    $('#booking-start').val(info.dateStr);
+    $('#booking-end').val(info.dateStr);
+    $('#booking-modal').removeClass('hidden');
+    $('#booking-id').val('');
+    $('#delete-appointment').addClass('hidden');
+},
+
 
         eventClick: function(info) {
             const event = info.event;

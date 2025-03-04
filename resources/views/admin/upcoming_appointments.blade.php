@@ -12,8 +12,8 @@
     <a href="{{ route('admin.appointments') }}" class="btn btn-primary" style="margin-bottom: 20px;">Go to Upcoming Appointments</a>
 
     <a href="{{ route('admin.patient_information') }}" class="btn btn-primary" style="margin-bottom: 20px;">See Patient Information</a>
-
-    
+<br>
+    <a href="{{ route('admin.declined_appointments') }}" class="btn btn-danger" style="margin-bottom: 20px;">See Declined Appointments</a>
 
     <br>
 
@@ -45,11 +45,72 @@
                                 <button type="submit" class="btn btn-success">Accept</button>
                             </form>
 
-                            <form action="{{ route('appointment.handleAction', ['id' => $appointment->id, 'action' => 'decline']) }}" method="POST" style="display:inline;">
-                                @csrf
-                                <textarea name="decline_reason" placeholder="Enter decline reason" rows="3"></textarea>
-                                <button type="submit" class="btn btn-danger">Decline</button>
-                            </form>
+                           <!-- Button to trigger the modal -->
+<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal">
+    Decline
+</button>
+<!-- Decline Confirmation Modal -->
+<div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="declineModalLabel">Decline Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="declineForm" action="{{ route('appointment.messageFromAdmin', ['id' => $appointment->id, 'action' => 'decline']) }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="appointment_id" value="{{ $appointment->id }}">
+                    <label for="message">Reason for Declining:</label>
+                    <textarea name="message" id="message" class="form-control" required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger">Decline</button>
+            </div>
+            </form> <!-- ✅ Move form closing tag inside modal -->
+        </div>
+    </div>
+</div>
+
+<!-- jQuery & AJAX -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert for better popups -->
+
+<script>
+   $(document).ready(function () {
+       // Ensure the event is bound properly
+       $('#declineForm').off('submit').on('submit', function (e) {
+           e.preventDefault(); // Prevent default form submission
+
+           let button = $(this).find("button[type='submit']");
+           button.prop("disabled", true); // Disable button to prevent duplicate clicks
+
+           $.ajax({
+               url: $(this).attr('action'), // ✅ Use form action dynamically
+               type: "POST",
+               data: $(this).serialize(),
+               dataType: "json", // Ensure the response is handled as JSON
+               success: function (response) {
+                   Swal.fire({
+                       title: "Success!",
+                       text: response.message,
+                       icon: "success",
+                       timer: 2000,
+                       showConfirmButton: false
+                   }).then(() => location.reload()); // Reload after alert
+               },
+               error: function (xhr) {
+                   let errorMessage = xhr.responseJSON?.message || "An error occurred.";
+                   Swal.fire("Error!", errorMessage, "error");
+                   button.prop("disabled", false); // Re-enable button if error occurs
+               }
+           });
+       });
+   });
+</script>
+
+
                             
                             
                         </td>    

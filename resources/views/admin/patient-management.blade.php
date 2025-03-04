@@ -184,9 +184,12 @@
         <div class="card mb-4" style="background-color: #d1e7fd; color: black; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <div class="card-body" style="font-family: 'Source Sans Pro', sans-serif; font-size: 20px; font-weight: 500; display: flex; align-items: center; justify-content: space-between;">
                 Dental Prices
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 28px; height: 28px; color: #1d4ed8; margin-left: 10px;" aria-label="Dental Prices Icon">
-                    <path d="M12 22c1.1 0 1.99-.9 1.99-2H10c0 1.1.9 2 2 2zm6-3V9c0-3.31-2.69-6-6-6S6 5.69 6 9v10h12zm-3-3h-6v-7h6v7z"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" 
+    style="width: 28px; height: 28px; color: #1d4ed8; margin-left: 10px;" 
+    aria-label="Money Icon">
+    <path d="M12 1C6.48 1 2 5.48 2 11s4.48 10 10 10 10-4.48 10-10S17.52 1 12 1zm1 15h-2v-1c-1.1 0-2-.9-2-2h2c0 .55.45 1 1 1s1-.45 1-1-.45-1-1-1c-1.65 0-3-1.35-3-3s1.35-3 3-3V5h2v1c1.1 0 2 .9 2 2h-2c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1c1.65 0 3 1.35 3 3s-1.35 3-3 3v1z"/>
+</svg>
+
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between" style="border-top: 1px solid #cbd5e1;">
                 <a class="small text-black stretched-link" href="{{ route('admin.procedure_prices') }}">View Details</a>

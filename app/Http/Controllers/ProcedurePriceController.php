@@ -53,4 +53,29 @@ class ProcedurePriceController extends Controller
         // Redirect back with a success message
         return redirect()->route('admin.procedure_prices')->with('success', 'Procedure price updated successfully.');
     }
+
+    public function destroy($id)
+{
+    $procedure = ProcedurePrice::findOrFail($id);
+    $procedure->delete();
+
+    return redirect()->route('admin.procedure_prices')->with('success', 'Procedure price deleted successfully.');
+}
+
+public function getProcedureDetails(Request $request)
+{
+    $procedure = \App\Models\ProcedurePrice::where('procedure_name', $request->procedure)->first();
+
+    if ($procedure) {
+        return response()->json([
+            'price' => $procedure->price,
+            'duration' => $procedure->duration // Ensure this field exists in DB
+        ]);
+    }
+
+    return response()->json(['error' => 'Procedure not found'], 404);
+}
+
+
+
 }

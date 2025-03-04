@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\Appointment;
 use App\Models\DeclinedAppointment;
+use App\Models\Message;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -138,5 +139,45 @@ public function getUnreadCount()
     return response()->json(['unreadCount' => $unreadCount]);
 }
 
-    
+public function declinedAppointments()
+{
+    $declinedAppointments = Appointment::where('status', 'declined')
+    ->select('user_id', 'title', 'procedure', 'created_at', 'updated_at')
+    ->get();
+    return view('admin.declined_appointments', compact('declinedAppointments'));
+}
+
+public function deleteAllDeclined() {
+    Appointment::where('status', 'declined')->delete();
+    DeclinedAppointment::truncate(); // Delete all from the table
+    return redirect()->back()->with('success', 'All declined appointments deleted.');
+}
+
+public function messageFromAdmin(Request $request, $id, $action)
+{
+    $appointment = Appointment::findOrFail($id);
+
+    if ($action == 'decline') {
+        $request->validate([
+            'message' => 'required|string|max:255'
+        ]);
+
+        // Save the message
+        Message::create([
+            'user_id' => $appointment->user_id,
+            'message' => $request->message,
+            'is_admin' => true,
+            'status' => 'unread'
+        ]);
+
+        // Update appointment status
+        $appointment->status = 'declined';
+        $appointment->save();
+
+        return response()->json(['message' => 'Appointment declined successfully and message sent.']);
+    }
+
+    return response()->json(['message' => 'Invalid action.'], 400);
+}
+
 }
