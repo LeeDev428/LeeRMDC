@@ -64,4 +64,25 @@ class MessageController extends Controller
 
         return redirect()->back()->with('success', 'Reply sent successfully!');
     }
+
+ 
+
+public function unreadMessagesCount()
+{
+    $unreadCount = Message::where('user_id', Auth::id())
+        ->where('status', 'unread')
+        ->count();
+
+    return response()->json(['count' => $unreadCount]);
+}
+
+public function markMessagesAsRead()
+{
+    Message::where('user_id', Auth::id())
+        ->where('status', 'unread')
+        ->update(['status' => 'read']);
+
+    return response()->json(['success' => true]);
+}
+
 }

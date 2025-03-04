@@ -28,12 +28,76 @@
 
             <!-- Notification Message (Right Corner) -->
             <div class="flex items-center space-x-1">
-                <button onclick="window.location='{{ route('messages.index') }}'" class="relative p-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none transition-all duration-300 ease-in-out shadow-lg hover:shadow-2xl transform hover:scale-105">
+                <button id="message-button" onclick="window.location='{{ route('messages.index') }}'" class="relative p-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none transition-all duration-300 ease-in-out shadow-lg hover:shadow-2xl transform hover:scale-105">
                     <!-- Notification Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-600 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2zM3 8l9 6 9-6" />
                     </svg>
+                @php
+                    $unreadCountmess = App\Models\Message::where('user_id', Auth::id())
+                        ->where('status', 'unread')
+                        ->latest()
+                        ->get();
+
+                @endphp
+                    <!-- Notification Badge -->
+                    @if ($unreadCountmess->count() > 0)
+                    <span id="message-count" class="absolute top-0 right-0 rounded-full bg-red-500 text-white text-xs font-semibold px-2 py-1 notification-count animate-pulse">
+                        {{ $unreadCountmess->count() > 10 ? '10+' : $unreadCountmess->count() }}
+                    </span>
+                @else
+                    <span id="message-count" class="absolute top-0 right-0 rounded-full bg-red-500 text-white text-xs font-semibold px-2 py-1 notification-count animate-pulse" style="display: none;">
+                        0
+                    </span>
+                @endif
                 </button>
+                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function fetchUnreadMessagesCount() {
+        $.ajax({
+            url: "/unread-messages-count",
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                console.log("Unread count:", response.count);  // Debugging
+                let count = response.count;
+                let badge = $("#message-count");
+
+                if (count > 0) {
+                    badge.text(count).removeClass("hidden");
+                } else {
+                    badge.addClass("hidden");
+                }
+            },
+            error: function (xhr) {
+                console.error("Error fetching unread count:", xhr);
+            }
+        });
+    }
+
+    function markMessagesAsRead() {
+        $.ajax({
+            url: "/mark-messages-as-read",
+            type: "POST",
+            data: { _token: "{{ csrf_token() }}" },
+            success: function () {
+                $("#message-count").addClass("hidden");
+                window.location.href = "{{ route('messages.index') }}"; 
+            },
+            error: function (xhr) {
+                console.error("Error marking messages as read:", xhr);
+            }
+        });
+    }
+
+    // Load unread message count when the page loads
+    $(document).ready(fetchUnreadMessagesCount);
+
+    // Automatically update the count every 5 seconds
+    setInterval(fetchUnreadMessagesCount, 5000);
+</script>
+
+
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 <!-- Notification Bell Icon -->
                 <div class="relative">
@@ -109,6 +173,34 @@
                         <b style="font-size: 16px;">Notifications</b>
                         <button id="mark-as-read" class="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-300">Mark all as read</button>
                     </div>
+
+                    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Handle Mark all as Read
+        $("#mark-as-read").click(function () {
+            $.ajax({
+                url: "{{ route('notifications.mark-as-read') }}",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Reset notification count
+                        $("#notification-badge").hide();
+                        // Optionally remove all notifications from the dropdown
+                        $("#notification-list").html("<p class='p-2 text-center text-gray-500'>No notifications</p>");
+                    }
+                },
+                error: function (xhr) {
+                    console.log("Error marking notifications as read:", xhr);
+                }
+            });
+        });
+    });
+</script>
+
                     <ul id="notification-list" class="font-poppins text-gray-700 dark:text-gray-300 text-sm p-3">
                         <p class="text-center italic text-gray-600">Loading Notifications...</p>
                     </ul>
@@ -126,6 +218,7 @@
                 </div>
                 </div>
                 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                
 <script>
 $(document).ready(function () {
     function fetchNotifications() {

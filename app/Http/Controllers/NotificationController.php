@@ -9,6 +9,16 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+
+    public function markAsRead()
+    {
+        Notification::where('user_id', Auth::id())
+                    ->where('status', 'unread')
+                    ->update(['status' => 'read']);
+    
+        return response()->json(['success' => true]);
+    }
+    
     // public function checkNewNotifications()
     // {
     //     $newAppointments = Appointment::where('status', 'upcoming')

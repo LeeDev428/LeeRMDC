@@ -14,10 +14,11 @@
     use App\Http\Controllers\ChartController;
     use App\Http\Controllers\ProcedurePriceController;
 
+    use Illuminate\Http\Request;
     use Laravel\Socialite\Facades\Socialite;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Auth;
-    use App\Models\Notification;
+    use App\Models\Message;
 
     use Illuminate\Support\Facades\Route;
 
@@ -164,7 +165,10 @@ Route::get('/get-procedure-price', [AppointmentController::class, 'getProcedureP
     });
 
 
-
+    Route::get('/unread-messages-count', [MessageController::class, 'unreadMessagesCount'])->middleware('auth');
+    Route::post('/mark-messages-as-read', [MessageController::class, 'markMessagesAsRead'])->middleware('auth');
+    
+    
 
     Route::get('/search', function () {
         $query = request('query');
@@ -182,13 +186,8 @@ Route::get('/get-procedure-price', [AppointmentController::class, 'getProcedureP
         return response()->json($results);
     });
 
-    Route::post('/mark-notifications-as-read', function () {
-        // Update all unread notifications for the logged-in user
-        Notification::where('user_id', Auth::id())
-                    ->where('status', 'unread')
-                    ->update(['status' => 'read']);
-        
-        return response()->json(['status' => 'success']);});
+    Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadMessagesCount'])->name('messages.unread-count');
 
         Route::get('/theme-settings', function () {
         return view('settings.theme-settings');
