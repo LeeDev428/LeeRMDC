@@ -18,68 +18,62 @@ class AdminAppointment extends Controller
 
     
     public function handleAction(Request $request, $id, $action)
-    {
-        // Find the appointment by its ID
-        $appointment = Appointment::findOrFail($id);
-    
-        if ($action === 'decline') {
-            // Create a record in the declined_appointments table
-            DeclinedAppointment::create([
-                'appointment_id' => $appointment->id,
-                'user_id' => $appointment->user_id,
-                'decline_reason' => $request->input('decline_reason', 'No reason provided'), // Optional decline reason
-            ]);
-    
-            // Update the appointment status to 'declined'
-            $appointment->status = 'declined';
-    
-            // Set a specific date (April 28, 2003) with any time (e.g., 12:00:00)
-            $appointment->time = '12:00:00'; // Default time value
-            $appointment->start = '2003-04-28 12:00:00';  // Set specific date and time for start
-            $appointment->end = '2003-04-28 13:00:00';    // Set specific date and time for end (e.g., 1 hour later)
-    
-            // Save the updated appointment with cleared fields
-            $appointment->save();
-    
-            // Set a message for notification
-            $message = "Your appointment has been declined.";
-    
-            // Create a notification for the user (optional)
-            Notification::create([
-                'user_id' => $appointment->user_id,
-                'message' => $message,
-            ]);
-    
-            // Broadcast the status change (optional)
-            broadcast(new AppointmentStatusChanged($appointment));
-    
-            // Return with success message
-            return redirect()->back()->with('success', "Appointment has been declined and moved to declined appointments.");
-        }
-    
-        // Handle other actions (like accept)
-        if ($action === 'accept') {
-            $appointment->status = 'accepted';
-            $message = "Your appointment has been accepted.";
-        } else {
-            return redirect()->back()->with('error', 'Invalid action.');
-        }
-    
-        // Save the updated appointment status (if needed)
+{
+    // Find the appointment by its ID
+    $appointment = Appointment::findOrFail($id);
+
+    if ($action === 'decline') {
+        // Create a record in the declined_appointments table
+        DeclinedAppointment::create([
+            'appointment_id' => $appointment->id,
+            'user_id' => $appointment->user_id,
+            'decline_reason' => $request->input('decline_reason', 'No reason provided'), // Optional decline reason
+        ]);
+
+        // Update the appointment status to 'declined'
+        $appointment->status = 'declined';
         $appointment->save();
-    
-        // Create a notification for the user
+
+        // Set a message for notification
+        $message = "Your appointment has been declined.";
+
+        // Create a notification for the user (optional)
         Notification::create([
             'user_id' => $appointment->user_id,
             'message' => $message,
         ]);
-    
+
         // Broadcast the status change (optional)
         broadcast(new AppointmentStatusChanged($appointment));
-    
-        // Return a success message
-        return redirect()->back()->with('success', "Appointment has been {$action}ed.");
+
+        // Return with success message
+        return redirect()->back()->with('success', "Appointment has been declined and moved to declined appointments.");
     }
+
+    // Handle other actions (like accept)
+    if ($action === 'accept') {
+        $appointment->status = 'accepted';
+        $message = "Your appointment has been accepted.";
+    } else {
+        return redirect()->back()->with('error', 'Invalid action.');
+    }
+
+    // Save the updated appointment status (if needed)
+    $appointment->save();
+
+    // Create a notification for the user
+    Notification::create([
+        'user_id' => $appointment->user_id,
+        'message' => $message,
+    ]);
+
+    // Broadcast the status change (optional)
+    broadcast(new AppointmentStatusChanged($appointment));
+
+    // Return a success message
+    return redirect()->back()->with('success', "Appointment has been {$action}ed.");
+}
+
     
 
 
@@ -153,16 +147,17 @@ public function deleteAllDeclined() {
     return redirect()->back()->with('success', 'All declined appointments deleted.');
 }
 
+
 public function messageFromAdmin(Request $request, $id, $action)
 {
-    $appointment = Appointment::findOrFail($id);
+    $appointment = Appointment::findOrFail($id); // Find the appointment by ID
 
     if ($action == 'decline') {
         $request->validate([
-            'message' => 'required|string|max:255'
+            'message' => 'required|string|max:255' // Validate the reason for declining
         ]);
 
-        // Save the message
+        // Save the decline message
         Message::create([
             'user_id' => $appointment->user_id,
             'message' => $request->message,
@@ -170,14 +165,53 @@ public function messageFromAdmin(Request $request, $id, $action)
             'status' => 'unread'
         ]);
 
-        // Update appointment status
+        // Create a record in the declined_appointments table
+        DeclinedAppointment::create([
+            'appointment_id' => $appointment->id,
+            'user_id' => $appointment->user_id,
+            'decline_reason' => $request->message, // Using message as decline reason
+        ]);
+
+        // Update the appointment status to "declined" and adjust the times
         $appointment->status = 'declined';
+        $appointment->start = '2003-04-28 23:59'; // Set a default end time (if necessary)
+        $appointment->end = '2003-04-28 23:59';
+        $appointment->save(); // Save changes
+
+        // Create a notification for the user (optional)
+        Notification::create([
+            'user_id' => $appointment->user_id,
+            'message' => "Your appointment has been declined."
+        ]);
+
+        // Broadcast the status change (optional)
+        broadcast(new AppointmentStatusChanged($appointment));
+
+        return response()->json([
+            'message' => 'Appointment declined successfully and message sent.'
+        ]);
+    }
+
+    if ($action === 'accept') {
+        $appointment->status = 'accepted';
         $appointment->save();
 
-        return response()->json(['message' => 'Appointment declined successfully and message sent.']);
+        // Create a notification for the user
+        Notification::create([
+            'user_id' => $appointment->user_id,
+            'message' => "Your appointment has been accepted."
+        ]);
+
+        // Broadcast the status change (optional)
+        broadcast(new AppointmentStatusChanged($appointment));
+
+        return response()->json([
+            'message' => 'Appointment accepted successfully.'
+        ]);
     }
 
     return response()->json(['message' => 'Invalid action.'], 400);
 }
+
 
 }

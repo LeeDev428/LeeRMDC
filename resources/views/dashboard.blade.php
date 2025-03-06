@@ -21,99 +21,139 @@
     
     <!-- Automatically Display Notifications and Appointment Details in One Card -->
     <div class="py-1 max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <!-- Notification and Appointment Combined -->
-        @php
-            $unreadNotifications = App\Models\Notification::where('user_id', Auth::id())
-                ->where('status', 'unread')
-                ->latest()
-                ->first(); // Get the most recent unread notification
+      
 
-            $appointments = App\Models\Appointment::where('user_id', Auth::id())->latest()->first(); // Get the most recent appointment
-        @endphp
-
-        <!-- Display Notification and Appointment Details in One Card -->
-        @if ($unreadNotifications || $appointments)
-            <div class="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg overflow-hidden">
-                <!-- Invoice Title -->
-                <div class="flex justify-center items-center h-auto">
-                    <div class="text-center font-semibold text-3xl text-gray-800 dark:text-white">
-                        <span class="text-blue-600">Your</span> Notification & Appointment
-                    </div>
-                </div>
+  
+    
+    <div class="invoice-container border border-gray-300 rounded-lg p-6 bg-white shadow-md mt-6 relative">
 <br>
-                <div class="border-b border-gray-200 dark:border-gray-700 pb-6">
-                    <!-- Notification Message -->
-                    @if ($unreadNotifications)
-                        <div class="mb-4">
-                            <div class="text-xl font-medium text-gray-800 dark:text-white">
-                                Notification
-                            </div>
-                            <div class="text-md text-gray-600 dark:text-gray-300 mt-2">
-                                {{ $unreadNotifications->message }}
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">
-                                <span class="font-semibold">Date:</span> {{ $unreadNotifications->created_at->format('m/d/Y H:i') }}
-                            </div>
-                            <div class="text-xs text-gray-400">
-                                {{ $unreadNotifications->created_at->diffForHumans() }}
-                            </div>
-                        </div>
-                    @else
-                        <div class="font-medium text-gray-800 dark:text-white">
-                            No unread notifications.
-                        </div>
-                    @endif
+<br>
+        <!-- Fixed Centered Image -->
+        <img src="{{ asset('img/dcms_iconmini(1).png') }}" alt="Logo" 
+            class="absolute top-25 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20">
+    <br>
+        <!-- Invoice Header -->
+        <div class="text-center font-semibold text-3xl text-gray-800 mt-10">
+            <span class="text-blue-600">Your</span> Appointment
+        </div>
+
+        <div class="border border-gray-300 rounded-lg p-6 bg-white shadow-md mt-6">
+            
+            <!-- Invoice Title -->
+            <div class="flex justify-between items-center border-b pb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-700">Billing Invoice</h1>
+                    <br>
+                    <p class="text-sm text-gray-500">Issued on: {{ \Carbon\Carbon::now()->format('F j, Y') }}</p>
                 </div>
-
-                <div class="border-b border-gray-200 dark:border-gray-700 pb-6 mt-6">
-                    <!-- Appointment Details -->
-
+                <div class="text-right">
+                    <h2 class="text-lg font-semibold text-gray-700">
+                        INVOICE #{{ $appointments ? $appointments->id : 'N/A' }}
+                    </h2>
                     
-                    @if ($appointments)
-                        <div class="mb-4">
-                            <div class="text-xl font-medium text-gray-800 dark:text-white">
-                                Appointment
-                            </div>
-                            @if ($appointments->status == 'accepted')
-                                <div class="text-md text-green-600 dark:text-green-400 mt-2">
-                                    <strong>{{ $appointments->procedure }}</strong> has been accepted.
-                                </div>
-                            @elseif ($appointments->status == 'pending')
-                                <div class="text-md text-yellow-600 dark:text-yellow-400 mt-2">
-                                    Your appointment is still pending.
-                                </div>
-                            @elseif ($appointments->status == 'rejected')
-                                <div class="text-md text-red-600 dark:text-red-400 mt-2">
-                                    Unfortunately, your appointment has been rejected.
-                                </div>
-                            @else
-                                <div class="text-md text-gray-500 dark:text-gray-400 mt-2">
-                                    No status information available for your appointment.
-                                </div>
-                            @endif
-                            <div class="mt-2 text-xs text-gray-500">
-                                <span class="font-semibold">Scheduled at:</span> {{ $appointments->created_at->format('m/d/Y H:i') }}
-                            </div>
-                            <div class="text-xs text-gray-400">
-                                {{ $appointments->created_at->diffForHumans() }}
-                            </div>
-                        </div>
-                    @else
-                        <div class="font-medium text-gray-800 dark:text-white mt-2">
-                            No appointments found.
-                        </div>
-                    @endif
+                    <br>
+                    <p class="text-sm text-gray-500">
+                        Status: 
+                        <span class="px-2 py-1 text-[14px] font-semibold rounded-md 
+                        @if($appointments && $appointments->status == 'pending') 
+                            bg-yellow-100 text-yellow-600 
+                        @elseif($appointments && $appointments->status == 'accepted') 
+                            bg-green-100 text-green-600 
+                        @elseif($appointments && $appointments->status == 'declined') 
+                            bg-red-100 text-red-600 
+                        @else 
+                            bg-gray-100 text-gray-600 
+                        @endif">
+                        {{ $appointments ? ucfirst($appointments->status) : 'N/A' }}
+                    </span>
+                    
+                    </p>
                 </div>
             </div>
-        @else
-            <div class="p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg mb-4">
-                <div class="font-medium text-gray-800 dark:text-white text-center">
-                    No recent notifications or appointments.
+            
+            <!-- Billing Details -->
+            <div class="mt-4 flex justify-between">
+                <div>
+                    <p class="font-semibold text-gray-600">Billed To:</p>
+                    <p class="text-sm text-gray-500">{{ auth()->user()->name ?? 'Unknown' }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold text-gray-600">Doctor:</p>
+                    <span id="doctor-name" class="text-sm text-gray-500"></span>
                 </div>
             </div>
-        @endif
-        
+            <script>
+                fetch('/admin/details')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("doctor-name").innerText = data.name || "Dr. Unknown";
+                    })
+                    .catch(error => console.error("Error fetching admin:", error));
+            </script>
+    
+           <!-- Responsive Table Container -->
+        <div class="overflow-x-auto mt-6">
+            <table class="w-full border-collapse border border-gray-200 min-w-[600px]">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="border border-gray-200 px-4 py-2 text-center text-sm font-semibold text-gray-600">Procedure</th>
+                        <th class="border border-gray-200 px-4 py-2 text-center text-sm font-semibold text-gray-600">Date</th>
+                        <th class="border border-gray-200 px-4 py-2 text-center text-sm font-semibold text-gray-600">Time</th>
+                        <th class="border border-gray-200 px-4 py-2 text-center text-sm font-semibold text-gray-600">Duration</th>
+                        <th class="border border-gray-200 px-4 py-2 text-center text-sm font-semibold text-gray-600">Price</th>
+                        <th class="border border-gray-200 px-4 py-2 text-center text-sm font-semibold text-gray-600">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border border-gray-200">
+                        <td class="px-4 py-2 text-center text-sm text-gray-600">{{ $appointments->procedure ?? 'N/A' }}</td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-600">{{ $appointments && $appointments->start ? \Carbon\Carbon::parse($appointments->start)->format('F j, Y') : 'N/A' }}</td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-600">
+                            {{ $appointments && $appointments->start ? \Carbon\Carbon::parse($appointments->start)->format('h:i A') : 'N/A' }} - 
+                            {{ $appointments && $appointments->end ? \Carbon\Carbon::parse($appointments->end)->format('h:i A') : 'N/A' }}
+                        </td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-600"> <span id="estimated-time"></span></td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-600">₱<span id="procedure-price"></span></td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-600"><span id=""></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Total and Footer -->
+        <div class="flex flex-col md:flex-row justify-between mt-6 border-t pt-4">
+            <div class="text-sm text-gray-500">
+                <p>• {{ $appointments && $appointments->created_at ? $appointments->created_at->diffForHumans() : 'N/A' }}</p>
+            </div>
+            <div class="text-right mt-2 md:mt-0">
+                <p class="text-lg font-semibold text-gray-700">Total: ₱<span id="procedure-price2"></span></p>
+            </div>
+        </div>
     </div>
+</div>
+    
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        let procedureName = "{{ $appointments->procedure ?? '' }}";
+
+                        if (procedureName) {
+                            fetch(`/get-procedure-details?procedure=${encodeURIComponent(procedureName)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    document.getElementById("estimated-time").textContent = data.duration;
+                                    document.getElementById("procedure-price").textContent = data.price;
+                                    document.getElementById("procedure-price2").textContent = data.price;
+                                })
+                                .catch(error => console.error("Error fetching procedure details:", error));
+                        }
+                    });
+                </script>
+        </div>
+    </div>
+    
+            
+                
+
 
     <section>
         <div class="py-10">

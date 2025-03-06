@@ -44,6 +44,8 @@
     // Route for the user dashboard with UserMiddleware
     Route::middleware(UserMiddleware::class)->group(function () {
         Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard'); // Use UserController instead of ProfileController
+        Route::get('/get-procedure-details', [UserController::class, 'getProcedureDetails']);
+        Route::get('/admin/details', [UserController::class, 'getAdminDetails']);
         Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
         Route::post('/messages', [MessageController::class, 'store'])->name('messages.store'); 
           // In your routes/web.php
@@ -103,6 +105,7 @@
         Route::post('/mark-notifications-as-read', [NotificationController::class, 'markAsRead']);
         Route::get('/get-unread-count', [NotificationController::class, 'getUnreadCount']);
         Route::post('/mark-notifications-as-read', [NotificationController::class, 'markAsRead']);
+      
 
         //chat
         Route::get('/admin/messages', [AdminMessageController::class, 'index'])->name('admin.patient_messages');
@@ -167,7 +170,14 @@ Route::get('/get-procedure-price', [AppointmentController::class, 'getProcedureP
 
     Route::get('/unread-messages-count', [MessageController::class, 'unreadMessagesCount'])->middleware('auth');
     Route::post('/mark-messages-as-read', [MessageController::class, 'markMessagesAsRead'])->middleware('auth');
-    
+    Route::get('/admin/unread-messages-count', [MessageController::class, 'getUnreadMessagesCount']);
+    Route::post('/admin/mark-messages-read', [MessageController::class, 'markMessagesAsReadAdmin']);
+    Route::post('/appointment/{id}/{action}', [AdminAppointment::class, 'messageFromAdmin'])
+    ->name('appointment.messageFromAdmin');
+
+ 
+
+
     
 
     Route::get('/search', function () {

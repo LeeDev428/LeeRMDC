@@ -28,74 +28,58 @@
 
             <!-- Notification Message (Right Corner) -->
             <div class="flex items-center space-x-1">
-                <button id="message-button" onclick="window.location='{{ route('messages.index') }}'" class="relative p-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none transition-all duration-300 ease-in-out shadow-lg hover:shadow-2xl transform hover:scale-105">
-                    <!-- Notification Icon -->
+                <button onclick="markMessagesAsRead()" class="relative p-3 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none transition-all duration-300 ease-in-out shadow-lg hover:shadow-2xl transform hover:scale-105">
+                    <!-- Message Icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-600 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2zM3 8l9 6 9-6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2-2 0 012-2zM3 8l9 6 9-6" />
                     </svg>
-                @php
-                    $unreadCountmess = App\Models\Message::where('user_id', Auth::id())
-                        ->where('status', 'unread')
-                        ->latest()
-                        ->get();
-
-                @endphp
+                
                     <!-- Notification Badge -->
-                    @if ($unreadCountmess->count() > 0)
-                    <span id="message-count" class="absolute top-0 right-0 rounded-full bg-red-500 text-white text-xs font-semibold px-2 py-1 notification-count animate-pulse">
-                        {{ $unreadCountmess->count() > 10 ? '10+' : $unreadCountmess->count() }}
-                    </span>
-                @else
-                    <span id="message-count" class="absolute top-0 right-0 rounded-full bg-red-500 text-white text-xs font-semibold px-2 py-1 notification-count animate-pulse" style="display: none;">
-                        0
-                    </span>
-                @endif
+                    <span id="message-count" class="absolute top-0 right-0 rounded-full bg-red-500 text-white text-xs font-semibold px-2 py-1 notification-count animate-pulse hidden">0</span>
                 </button>
+                
                 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    function fetchUnreadMessagesCount() {
-        $.ajax({
-            url: "/unread-messages-count",
-            type: "GET",
-            dataType: "json",
-            success: function (response) {
-                console.log("Unread count:", response.count);  // Debugging
-                let count = response.count;
-                let badge = $("#message-count");
-
-                if (count > 0) {
-                    badge.text(count).removeClass("hidden");
-                } else {
-                    badge.addClass("hidden");
-                }
-            },
-            error: function (xhr) {
-                console.error("Error fetching unread count:", xhr);
-            }
-        });
-    }
-
-    function markMessagesAsRead() {
-        $.ajax({
-            url: "/mark-messages-as-read",
-            type: "POST",
-            data: { _token: "{{ csrf_token() }}" },
-            success: function () {
-                $("#message-count").addClass("hidden");
-                window.location.href = "{{ route('messages.index') }}"; 
-            },
-            error: function (xhr) {
-                console.error("Error marking messages as read:", xhr);
-            }
-        });
-    }
-
-    // Load unread message count when the page loads
-    $(document).ready(fetchUnreadMessagesCount);
-
-    // Automatically update the count every 5 seconds
-    setInterval(fetchUnreadMessagesCount, 5000);
-</script>
+                <script>
+                    function fetchUnreadMessagesCount() {
+                        $.ajax({
+                            url: "/unread-messages-count",
+                            type: "GET",
+                            dataType: "json",
+                            success: function (response) {
+                                let count = response.count;
+                                let badge = $("#message-count");
+                
+                                if (count > 0) {
+                                    badge.text(count).removeClass("hidden");
+                                } else {
+                                    badge.addClass("hidden");
+                                }
+                            },
+                            error: function (xhr) {
+                                console.error("Error fetching unread count:", xhr);
+                            }
+                        });
+                    }
+                
+                    function markMessagesAsRead() {
+                        $.ajax({
+                            url: "/mark-messages-as-read",
+                            type: "POST",
+                            data: { _token: "{{ csrf_token() }}" },
+                            success: function () {
+                                $("#message-count").addClass("hidden");
+                                window.location.href = "{{ route('messages.index') }}"; 
+                            },
+                            error: function (xhr) {
+                                console.error("Error marking messages as read:", xhr);
+                            }
+                        });
+                    }
+                
+                    $(document).ready(fetchUnreadMessagesCount);
+                    setInterval(fetchUnreadMessagesCount, 5000);
+                </script>
+                
 
 
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;

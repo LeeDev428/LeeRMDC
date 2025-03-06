@@ -7,19 +7,70 @@
 <div class="row">
 
     <div class="col-xl-3 col-md-6">
-        <div class="card mb-4" style="background-color: #d1e7fd; color: black; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div class="card mb-4 message-card" style="background-color: #d1e7fd; color: black; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); cursor: pointer;">
             <div class="card-body" style="font-family: 'Source Sans Pro', sans-serif; font-size: 20px; font-weight: 500; display: flex; align-items: center; justify-content: space-between;">
                 Patient Messages
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 28px; height: 28px; color: #1d4ed8;">
-                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 10h-5l-3 3-3-3H4V6h16v8z"/>
+                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2-2-2V6c0-1.1-.9-2-.9-2zm-2 10h-5l-3 3-3-3H4V6h16v8z"/>
                 </svg>
             </div>
             <div class="card-footer d-flex align-items-center justify-content-between" style="border-top: 1px solid #cbd5e1;">
                 <a class="small text-black stretched-link" href="{{ route('admin.patient_messages') }}">View Details</a>
+                <span id="unreadMessagesBadge" class="badge bg-secondary">0</span>
                 <div class="small text-black"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
     </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function updateUnreadMessagesCount() {
+            $.ajax({
+                url: "{{ url('/admin/unread-messages-count') }}",
+                method: "GET",
+                success: function(response) {
+                    let badge = $("#unreadMessagesBadge");
+                    if (response.count > 0) {
+                        badge.text(response.count).removeClass("bg-secondary").addClass("bg-danger");
+                    } else {
+                        badge.text("0").removeClass("bg-danger").addClass("bg-secondary");
+                    }
+                },
+                error: function() {
+                    console.error("Failed to fetch unread message count.");
+                }
+            });
+        }
+    
+        function markMessagesAsRead() {
+            $.ajax({
+                url: "{{ url('/admin/mark-messages-read') }}",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    if (response.success) {
+                        updateUnreadMessagesCount(); // Refresh the unread message count
+                    }
+                },
+                error: function() {
+                    console.error("Failed to mark messages as read.");
+                }
+            });
+        }
+    
+        $(document).ready(function () {
+            updateUnreadMessagesCount();
+    
+            $(".message-card").on("click", function () {
+                markMessagesAsRead(); // Mark messages as read when clicked
+            });
+    
+            setInterval(updateUnreadMessagesCount, 5000); // Auto-refresh every 5 seconds
+        });
+    </script>
+    
     
 
     <div class="col-xl-3 col-md-6">

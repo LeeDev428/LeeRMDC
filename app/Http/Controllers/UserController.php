@@ -7,11 +7,15 @@ use App\Models\ProcedurePrice;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
 use App\Models\Appointment;
+use App\Models\User;
 
 class UserController extends Controller
 {
     public function index(Request $request, $id = null, $action = null)
 {
+    $start = Appointment::select('start')->get();
+    $time = Appointment::select('time')->get();
+    $end = Appointment::select('end')->get();
     $procedurePrices = ProcedurePrice::all(); // Fetch all procedure prices
     $userId = Auth::id();
     
@@ -60,7 +64,46 @@ class UserController extends Controller
         'unreadNotifications' => $unreadNotifications,
         'allNotifications' => $allNotifications,
         'appointments' => Appointment::where('user_id', $userId)->latest()->first(), // Get the most recent appointment
-        'procedurePrices' => $procedurePrices
+        'procedurePrices' => $procedurePrices,
+        'start' => $start,
+        'time' => $time,
+        'end' => $end
+    ]);
+}
+
+public function getProcedureDetails(Request $request)
+{
+    $procedureName = $request->procedure;
+
+    // Fetch the procedure details
+    $procedure = ProcedurePrice::whereRaw('LOWER(procedure_name) = ?', [strtolower($procedureName)])->first();
+
+
+    // If procedure is not found, return default values instead of "N/A"
+    return response()->json([
+        'duration' => $procedure ? $procedure->duration . ' minutes' : '0 minutes',
+        'price' => $procedure ? '₱' . number_format($procedure->price, 2) : '₱0.00'
+    ]);
+}
+
+public function showAppointments()
+{
+    $user = auth::user(); // Get authenticated user
+
+    return view('dashboard', compact('user'));
+}
+
+public function getAdminDetails()
+{
+    $admin = User::where('usertype', 'admin')->first();
+
+    if (!$admin) {
+        return response()->json(['error' => 'Admin not found'], 404);
+    }
+
+    return response()->json([
+        'name' => $admin->name,
+        'email' => $admin->email
     ]);
 }
 }

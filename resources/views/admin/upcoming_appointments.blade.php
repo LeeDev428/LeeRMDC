@@ -40,15 +40,75 @@
                     <tr>
                         <td style="padding: 10px; white-space: nowrap;">
                             <!-- Accept and Decline Forms -->
-                            <form action="{{ route('appointment.handleAction', ['id' => $appointment->id, 'action' => 'accept']) }}" method="POST" style="display:inline;">
-                                @csrf
-                                <button type="submit" class="btn btn-success">Accept</button>
-                            </form>
+                           <!-- Accept Button -->
+<!-- Accept Button -->
+<form id="acceptForm" action="{{ route('appointment.messageFromAdmin', ['id' => $appointment->id, 'action' => 'accept']) }}" method="POST" style="display:inline;">
+    @csrf
+    <button type="submit" class="btn btn-success">Accept</button>
+</form>
 
-                           <!-- Button to trigger the modal -->
-<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal">
+<!-- JavaScript for Accept (Placed Below the Button) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert for better popups -->
+
+<script>
+    $(document).ready(function () {
+        $('#acceptForm').on('submit', function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            Swal.fire({
+                title: "Accept Appointment?",
+                text: "Are you sure you want to accept this appointment?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Accept",
+                cancelButtonText: "Cancel"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: "Processing...",
+                        text: "Please wait...",
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    $.ajax({
+                        url: $(this).attr('action'),
+                        type: "POST",
+                        data: $(this).serialize(),
+                        dataType: "json",
+                        success: function (response) {
+                            Swal.fire({
+                                title: "Success!",
+                                text: response.message,
+                                icon: "success",
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload(); // Reload page after success
+                            });
+                        },
+                        error: function (xhr) {
+                            let errorMessage = xhr.responseJSON?.message || "An error occurred.";
+                            Swal.fire("Error!", errorMessage, "error");
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+
+
+ <!-- Decline Button -->
+<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal" data-appointment-id="{{ $appointment->id }}">
     Decline
 </button>
+
 <!-- Decline Confirmation Modal -->
 <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -58,58 +118,86 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="declineForm" action="{{ route('appointment.messageFromAdmin', ['id' => $appointment->id, 'action' => 'decline']) }}" method="POST">
+                <form id="declineForm" action="{{ route('appointment.messageFromAdmin', ['id' => ':appointment_id', 'action' => 'decline']) }}" method="POST">
                     @csrf
-                    <input type="hidden" name="appointment_id" value="{{ $appointment->id }}">
+                    <input type="hidden" name="appointment_id" id="appointment_id">
                     <label for="message">Reason for Declining:</label>
                     <textarea name="message" id="message" class="form-control" required></textarea>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-danger">Decline</button>
+                <button type="submit" class="btn btn-danger" form="declineForm">Decline</button>
             </div>
-            </form> <!-- ✅ Move form closing tag inside modal -->
         </div>
     </div>
 </div>
 
-<!-- jQuery & AJAX -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert for better popups -->
-
+<!-- JavaScript for Decline Button -->
 <script>
-   $(document).ready(function () {
-       // Ensure the event is bound properly
-       $('#declineForm').off('submit').on('submit', function (e) {
-           e.preventDefault(); // Prevent default form submission
+    $(document).ready(function () {
+        var isSubmitting = false;
 
-           let button = $(this).find("button[type='submit']");
-           button.prop("disabled", true); // Disable button to prevent duplicate clicks
+        $('button[data-bs-toggle="modal"]').on('click', function () {
+            var appointmentId = $(this).data('appointment-id');
+            $('#appointment_id').val(appointmentId);
+            var actionUrl = '{{ route("appointment.messageFromAdmin", ["id" => ":appointment_id", "action" => "decline"]) }}';
+            actionUrl = actionUrl.replace(':appointment_id', appointmentId);
+            $('#declineForm').attr('action', actionUrl);
+        });
 
-           $.ajax({
-               url: $(this).attr('action'), // ✅ Use form action dynamically
-               type: "POST",
-               data: $(this).serialize(),
-               dataType: "json", // Ensure the response is handled as JSON
-               success: function (response) {
-                   Swal.fire({
-                       title: "Success!",
-                       text: response.message,
-                       icon: "success",
-                       timer: 2000,
-                       showConfirmButton: false
-                   }).then(() => location.reload()); // Reload after alert
-               },
-               error: function (xhr) {
-                   let errorMessage = xhr.responseJSON?.message || "An error occurred.";
-                   Swal.fire("Error!", errorMessage, "error");
-                   button.prop("disabled", false); // Re-enable button if error occurs
-               }
-           });
-       });
-   });
+        $('#declineForm').off('submit').on('submit', function (e) {
+            e.preventDefault();
+
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            let button = $(this).find("button[type='submit']");
+            button.prop("disabled", true);
+            
+            Swal.fire({
+                title: "Processing...",
+                text: "Please wait...",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: "POST",
+                data: $(this).serialize(),
+                dataType: "json",
+                success: function (response) {
+                    Swal.fire({
+                        title: "Success!",
+                        text: response.message,
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        $('#declineModal').modal('hide');
+                        location.reload();
+                    });
+                },
+                error: function (xhr) {
+                    let errorMessage = xhr.responseJSON?.message || "An error occurred.";
+                    Swal.fire("Error!", errorMessage, "error");
+                    button.prop("disabled", false);
+                },
+                complete: function() {
+                    isSubmitting = false;
+                    button.prop("disabled", false);
+                }
+            });
+        });
+    });
 </script>
 
+
+ 
 
                             
                             
@@ -129,7 +217,7 @@
                             @endif
                         </td>
                                              
-                        <td style="padding: 20px; white-space: nowrap;font-weight: bold;font-size: 17px;">{{ $appointment->status }}</td>
+                        <td style="padding: 20px; white-space: nowrap;font-weight: bold;font-size: 17px;">"{{ $appointment->status }}"</td>
                         <td style="padding: 20px; white-space: nowrap;">{{ $appointment->procedure }}</td>
                         <td style="padding: 20px; white-space: nowrap;">{{ $appointment->start }}</td>
                         <td style="padding: 20px; white-space: nowrap;">{{ $appointment->created_at }}</td>

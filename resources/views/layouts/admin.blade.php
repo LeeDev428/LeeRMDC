@@ -6,7 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
      
 
-         <link rel="icon" href="{{ asset('img/dcms_iconmini(1).png') }}" type="image/png">
+        <link rel="icon" href="{{ asset('img/dcms_loading_logo.png') }}" type="image/png">
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />

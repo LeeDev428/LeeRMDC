@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Message;
 use App\Models\User;  // Import the User model
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -69,12 +70,17 @@ class MessageController extends Controller
 
 public function unreadMessagesCount()
 {
-    $unreadCount = Message::where('user_id', Auth::id())
-        ->where('status', 'unread')
+    $userId = auth::id(); // Get the logged-in user's ID
+
+    $count = DB::table('messages')
+        ->where('status', 'unread')  // Count only unread messages
+        ->where('is_admin', 1)       // Only messages sent by the admin
+        ->where('user_id', $userId) // Include only messages received by the logged-in user
         ->count();
 
-    return response()->json(['count' => $unreadCount]);
+    return response()->json(['count' => $count]);
 }
+
 
 public function markMessagesAsRead()
 {
@@ -84,5 +90,26 @@ public function markMessagesAsRead()
 
     return response()->json(['success' => true]);
 }
+
+public function getUnreadMessagesCount()
+{
+    $unreadMessagesCount = DB::table('messages')
+        ->where('is_admin', 0) // Messages from patients
+        ->where('status', 'unread') // Only count unread messages
+        ->count();
+
+    return response()->json(['count' => $unreadMessagesCount]);
+}
+
+public function markMessagesAsReadAdmin()
+{
+    DB::table('messages')
+        ->where('is_admin', 0) // Messages from patients
+        ->where('status', 'unread')
+        ->update(['status' => 'read']);
+
+    return response()->json(['success' => true]);
+}
+
 
 }

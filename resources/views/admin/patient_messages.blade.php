@@ -29,8 +29,12 @@
                                  alt="User Avatar" 
                                  style="width: 26px; height: 26px; border-radius: 50%; margin-right: 12px;">
                             <div>
-                                <strong style="color: black;">{{ $user->name }}</strong>
-                                <p style="color: black; font-size: 11px; margin-bottom: 0;">User ID: {{ $user->id }}</p>
+                                <strong style="color: black;">
+                                    {{Str::limit($user->name, 8, '...') }}
+                                </strong>
+                                <p style="color: black; font-size: 11px; margin-bottom: 0;">
+                                    User ID: {{Str::limit($user->id, 6, '...') }}
+                                </p>                                
                             </div>
                         </div>
                         <!-- Message Preview and Timestamp -->
@@ -38,7 +42,7 @@
                             @if($user->messages->isNotEmpty())  
                                 <!-- Truncate message if longer than 8 characters -->
                                 <span style="color: black; display: block;">
-                                    ( {{ Str::limit($user->messages->first()->message, 8, '...') }} )
+                                    ( {{ Str::limit($user->messages->first()->message, 7, '...') }} )
                                 </span>
                                 <span style="font-size: 11px; display: block; color: black;"> 
                                     • {{ $user->messages->first()->created_at->diffForHumans() }}
