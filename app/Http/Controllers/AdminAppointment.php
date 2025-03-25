@@ -205,9 +205,8 @@ public function messageFromAdmin(Request $request, $id, $action)
         // Broadcast the status change (optional)
         broadcast(new AppointmentStatusChanged($appointment));
 
-        return response()->json([
-            'message' => 'Appointment accepted successfully.'
-        ]);
+        // Redirect back after success
+        return redirect()->back()->with('success', 'Appointment accepted successfully.');
     }
 
     return response()->json(['message' => 'Invalid action.'], 400);

@@ -25,7 +25,7 @@
 
   
     
-    <div class="invoice-container border border-gray-300 rounded-lg p-6 bg-white shadow-md mt-6 relative">
+    <div class="invoice-container border border-gray-300 rounded-lg p-6 dark:bg-gray bg-gray shadow-md mt-6 relative">
 <br>
 <br>
         <!-- Fixed Centered Image -->
@@ -37,7 +37,7 @@
             <span class="text-blue-600">Your</span> Appointment
         </div>
 
-        <div class="border border-gray-300 rounded-lg p-6 bg-white shadow-md mt-6">
+        <div class="border border-gray-300 rounded-lg p-6 bg-gray  dark:bg-white shadow-md mt-6">
             
             <!-- Invoice Title -->
             <div class="flex justify-between items-center border-b pb-4">
