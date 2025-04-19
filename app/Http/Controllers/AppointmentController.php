@@ -123,7 +123,7 @@ if ($startTime < $minimumBookingTime) {
 $procedure = ProcedurePrice::where('procedure_name', $validated['procedure'])->first();
 $duration = $procedure ? (int) $procedure->duration : 30; // Convert to integer
 
-// Calculate end time
+// Calculate end time 
 $endTime = $startTime->copy()->addMinutes($duration);
 
 
